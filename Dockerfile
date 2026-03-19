@@ -1,6 +1,9 @@
 FROM php:8.3-cli
 
-RUN docker-php-ext-install pdo pdo_mysql opcache
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git zip unzip \
+    && docker-php-ext-install pdo pdo_mysql opcache zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
