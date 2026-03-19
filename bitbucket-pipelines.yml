@@ -1,0 +1,13 @@
+image: amazon/aws-cli
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Trigger CodeBuild
+          script:
+            - aws codebuild start-build
+                --project-name poc-test-service-a-build
+                --source-version $BITBUCKET_COMMIT
+                --environment-variables-override name=BRANCH,value=$BITBUCKET_BRANCH,type=PLAINTEXT
+                --region eu-south-1
