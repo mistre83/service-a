@@ -1,11 +1,4 @@
-FROM php:8.3-cli
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git zip unzip libzip-dev \
-    && docker-php-ext-install pdo pdo_mysql opcache zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+FROM 800387480392.dkr.ecr.eu-south-1.amazonaws.com/poc-base-laravel:latest
 
 WORKDIR /var/www/html
 
