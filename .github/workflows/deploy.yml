@@ -23,6 +23,7 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to ${{ inputs.environment }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -138,4 +139,15 @@ jobs:
             --value "{\"tag\":\"$IMAGE_TAG\",\"branch\":\"$BRANCH\",\"deployed_at\":\"$DEPLOYED_AT\",\"deployed_by\":\"${{ github.actor }}\"}" \
             --type String --overwrite
 
-          echo "Deployed $SERVICE → $ENV @ $IMAGE_TAG"
+      - name: Summary
+        run: |
+          IMAGE_TAG="${{ steps.resolve.outputs.image_tag }}"
+          BRANCH="${{ steps.resolve.outputs.branch }}"
+          echo "### Deployed $SERVICE" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`$BRANCH\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image** | \`$IMAGE_TAG\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`$ENV\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
