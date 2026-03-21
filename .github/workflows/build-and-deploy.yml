@@ -1,0 +1,29 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy'
+        required: true
+        default: 'main'
+      environment:
+        description: 'Target environment (prod is blocked)'
+        required: true
+        default: 'test'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      branch: ${{ inputs.branch }}
+    secrets: inherit
+
+  deploy:
+    needs: build
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+      image_tag: ${{ needs.build.outputs.image_tag }}
+      branch: ${{ needs.build.outputs.branch }}
+    secrets: inherit

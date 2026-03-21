@@ -1,0 +1,141 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (prod is blocked)'
+        required: true
+        default: 'test'
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image_tag:
+        required: false
+        type: string
+        description: 'Image tag to deploy (if empty, reads latest from SSM)'
+      branch:
+        required: false
+        type: string
+        description: 'Source branch (if empty, reads from SSM)'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      SERVICE: ${{ github.event.repository.name }}
+      ENV: ${{ inputs.environment }}
+      AWS_REGION: eu-south-1
+
+    steps:
+      - name: Block prod deploys
+        if: inputs.environment == 'prod'
+        run: |
+          echo "::error::Direct deploy to prod is not allowed. Use: releaser prepare + releaser publish."
+          exit 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-south-1
+
+      - name: Resolve image tag
+        id: resolve
+        run: |
+          set -euo pipefail
+
+          IMAGE_TAG="${{ inputs.image_tag }}"
+          BRANCH="${{ inputs.branch }}"
+
+          if [ -z "$IMAGE_TAG" ]; then
+            SSM_VALUE=$(aws ssm get-parameter \
+              --name "/builds/$SERVICE/latest" \
+              --query "Parameter.Value" \
+              --output text)
+            IMAGE_TAG=$(echo "$SSM_VALUE" | jq -r '.sha')
+            BRANCH=$(echo "$SSM_VALUE" | jq -r '.branch // "main"')
+          fi
+
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Image: $IMAGE_TAG (branch: $BRANCH)"
+
+      - name: Register new task definition
+        id: taskdef
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_IMAGE="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/poc-${SERVICE}:${{ steps.resolve.outputs.image_tag }}"
+
+          aws ecs describe-task-definition \
+            --task-definition "poc-${ENV}-${SERVICE}" \
+            --query "taskDefinition" \
+            --output json | \
+          jq --arg image "$ECR_IMAGE" --arg container "$SERVICE" \
+            'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .compatibilities, .requiresAttributes)
+             | .containerDefinitions |= map(if .name == $container then .image = $image else . end)' \
+            > /tmp/task-def.json
+
+          NEW_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def.json \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
+
+          echo "task_definition_arn=$NEW_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition: $NEW_ARN"
+
+      - name: Update ECS service and wait for stability
+        run: |
+          set -euo pipefail
+
+          CLUSTER="poc-${ENV}-${SERVICE}-cluster"
+          ECS_SERVICE="poc-${ENV}-${SERVICE}"
+
+          aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "${{ steps.taskdef.outputs.task_definition_arn }}" \
+            --force-new-deployment \
+            --output text > /dev/null
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER" \
+            --services "$ECS_SERVICE"
+
+          echo "Service stable."
+
+      - name: Record deployment
+        run: |
+          set -euo pipefail
+
+          DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          IMAGE_TAG="${{ steps.resolve.outputs.image_tag }}"
+          BRANCH="${{ steps.resolve.outputs.branch }}"
+
+          aws dynamodb put-item \
+            --table-name poc-deployments \
+            --item "{
+              \"env_service\": {\"S\": \"${ENV}#${SERVICE}\"},
+              \"deployed_at\": {\"S\": \"$DEPLOYED_AT\"},
+              \"service\":     {\"S\": \"$SERVICE\"},
+              \"env\":         {\"S\": \"$ENV\"},
+              \"tag\":         {\"S\": \"$IMAGE_TAG\"},
+              \"branch\":      {\"S\": \"$BRANCH\"},
+              \"deployed_by\": {\"S\": \"${{ github.actor }}\"}
+            }"
+
+          aws ssm put-parameter \
+            --name "/deploys/${ENV}/${SERVICE}" \
+            --value "{\"tag\":\"$IMAGE_TAG\",\"branch\":\"$BRANCH\",\"deployed_at\":\"$DEPLOYED_AT\",\"deployed_by\":\"${{ github.actor }}\"}" \
+            --type String --overwrite
+
+          echo "Deployed $SERVICE → $ENV @ $IMAGE_TAG"
