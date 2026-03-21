@@ -9,26 +9,16 @@ phases:
 
   build:
     commands:
-      - docker build -t $ECR_REPO_URL:$IMAGE_TAG .
-      - docker tag $ECR_REPO_URL:$IMAGE_TAG $ECR_REPO_URL:latest
+      - docker build --platform linux/amd64 -t $ECR_REPO_URL:$IMAGE_TAG .
 
   post_build:
     commands:
       - docker push $ECR_REPO_URL:$IMAGE_TAG
-      - docker push $ECR_REPO_URL:latest
       - |
-        BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-        TAG="${RELEASE_TAG:-$CODEBUILD_RESOLVED_SOURCE_VERSION}"
+        # Push mutable 'main' tag only when building from main branch.
+        # deploy.yml uses this tag to promote the latest main image without a rebuild.
         BRANCH_VALUE="${BRANCH:-main}"
-        SERVICE_BRANCH="${SERVICE_NAME}#${BRANCH_VALUE}"
-
-        aws dynamodb put-item \
-          --table-name poc-builds \
-          --item "{
-            \"service\":        {\"S\": \"$SERVICE_NAME\"},
-            \"built_at\":       {\"S\": \"$BUILT_AT\"},
-            \"service_branch\": {\"S\": \"$SERVICE_BRANCH\"},
-            \"tag\":            {\"S\": \"$TAG\"},
-            \"sha\":            {\"S\": \"$CODEBUILD_RESOLVED_SOURCE_VERSION\"},
-            \"branch\":         {\"S\": \"$BRANCH_VALUE\"}
-          }"
+        if [ "$BRANCH_VALUE" = "main" ]; then
+          docker tag $ECR_REPO_URL:$IMAGE_TAG $ECR_REPO_URL:main
+          docker push $ECR_REPO_URL:main
+        fi
