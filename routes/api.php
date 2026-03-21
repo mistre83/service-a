@@ -8,5 +8,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('ping', function () {
-    return response()->json(['message' => 'pong service-a']);
+    return response()->json(['message' => 'pong service-a fix']);
 });
