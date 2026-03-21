@@ -13,17 +13,138 @@ on:
         default: 'test'
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yml
-    with:
-      branch: ${{ inputs.branch }}
-    secrets: inherit
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
-  deploy:
-    needs: build
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: ${{ inputs.environment }}
-      image_tag: ${{ needs.build.outputs.image_tag }}
-      branch: ${{ needs.build.outputs.branch }}
-    secrets: inherit
+    env:
+      SERVICE: ${{ github.event.repository.name }}
+      ENV: ${{ github.event.inputs.environment }}
+      BRANCH: ${{ github.event.inputs.branch }}
+      AWS_REGION: eu-south-1
+
+    steps:
+      - name: Block prod deploys
+        if: github.event.inputs.environment == 'prod'
+        run: |
+          echo "::error::Direct deploy to prod is not allowed. Use: releaser prepare + releaser publish."
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-south-1
+
+      - name: Trigger CodeBuild and wait
+        id: build
+        run: |
+          set -euo pipefail
+
+          SOURCE_SHA=$(git rev-parse HEAD)
+          IMAGE_TAG=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+
+          BUILD_ID=$(aws codebuild start-build \
+            --project-name "poc-test-${SERVICE}-build" \
+            --source-version "$SOURCE_SHA" \
+            --environment-variables-override \
+              name=BRANCH,value="$BRANCH",type=PLAINTEXT \
+              name=RELEASE_TAG,value="$IMAGE_TAG",type=PLAINTEXT \
+            --region eu-south-1 \
+            --query "build.id" --output text)
+
+          echo "CodeBuild started: $BUILD_ID"
+
+          while true; do
+            STATUS=$(aws codebuild batch-get-builds --ids "$BUILD_ID" \
+              --query "builds[0].buildStatus" --output text)
+            echo "Status: $STATUS"
+            [ "$STATUS" = "SUCCEEDED" ] && break
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "FAULT" ] || \
+               [ "$STATUS" = "TIMED_OUT" ] || [ "$STATUS" = "STOPPED" ]; then
+              echo "::error::CodeBuild failed with status: $STATUS"
+              exit 1
+            fi
+            sleep 30
+          done
+
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Register new task definition
+        id: taskdef
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_IMAGE="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/poc-${SERVICE}:${{ steps.build.outputs.image_tag }}"
+
+          aws ecs describe-task-definition \
+            --task-definition "poc-${ENV}-${SERVICE}" \
+            --query "taskDefinition" \
+            --output json | \
+          jq --arg image "$ECR_IMAGE" --arg container "$SERVICE" \
+            'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .compatibilities, .requiresAttributes)
+             | .containerDefinitions |= map(if .name == $container then .image = $image else . end)' \
+            > /tmp/task-def.json
+
+          NEW_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def.json \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
+
+          echo "task_definition_arn=$NEW_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition: $NEW_ARN"
+
+      - name: Update ECS service and wait for stability
+        run: |
+          set -euo pipefail
+
+          CLUSTER="poc-${ENV}-${SERVICE}-cluster"
+          ECS_SERVICE="poc-${ENV}-${SERVICE}"
+
+          aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "${{ steps.taskdef.outputs.task_definition_arn }}" \
+            --force-new-deployment \
+            --output text > /dev/null
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER" \
+            --services "$ECS_SERVICE"
+
+          echo "Service stable."
+
+      - name: Record deployment
+        run: |
+          set -euo pipefail
+
+          DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          IMAGE_TAG="${{ steps.build.outputs.image_tag }}"
+
+          aws dynamodb put-item \
+            --table-name poc-deployments \
+            --item "{
+              \"env_service\": {\"S\": \"${ENV}#${SERVICE}\"},
+              \"deployed_at\": {\"S\": \"$DEPLOYED_AT\"},
+              \"service\":     {\"S\": \"$SERVICE\"},
+              \"env\":         {\"S\": \"$ENV\"},
+              \"tag\":         {\"S\": \"$IMAGE_TAG\"},
+              \"branch\":      {\"S\": \"$BRANCH\"},
+              \"deployed_by\": {\"S\": \"${{ github.actor }}\"}
+            }"
+
+          aws ssm put-parameter \
+            --name "/deploys/${ENV}/${SERVICE}" \
+            --value "{\"tag\":\"$IMAGE_TAG\",\"branch\":\"$BRANCH\",\"deployed_at\":\"$DEPLOYED_AT\",\"deployed_by\":\"${{ github.actor }}\"}" \
+            --type String --overwrite
+
+          echo "Deployed $SERVICE → $ENV @ $IMAGE_TAG"
