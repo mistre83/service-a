@@ -6,7 +6,6 @@ phases:
       - REGISTRY=$(echo $ECR_REPO_URL | cut -d/ -f1)
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
       - IMAGE_TAG=$(echo ${RELEASE_TAG:-$CODEBUILD_RESOLVED_SOURCE_VERSION} | tr '/' '-')
-      - BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   build:
     commands:
@@ -18,12 +17,18 @@ phases:
       - docker push $ECR_REPO_URL:$IMAGE_TAG
       - docker push $ECR_REPO_URL:latest
       - |
+        BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        TAG="${RELEASE_TAG:-$CODEBUILD_RESOLVED_SOURCE_VERSION}"
+        BRANCH_VALUE="${BRANCH:-main}"
+        SERVICE_BRANCH="${SERVICE_NAME}#${BRANCH_VALUE}"
+
         aws dynamodb put-item \
           --table-name poc-builds \
-          --item "{\"service\":{\"S\":\"$SERVICE_NAME\"},\"tag\":{\"S\":\"${RELEASE_TAG:-$CODEBUILD_RESOLVED_SOURCE_VERSION}\"},\"sha\":{\"S\":\"$CODEBUILD_RESOLVED_SOURCE_VERSION\"},\"branch\":{\"S\":\"${BRANCH:-main}\"},\"built_at\":{\"S\":\"$BUILT_AT\"}}"
-      - |
-        aws ssm put-parameter \
-          --name "/builds/$SERVICE_NAME/latest" \
-          --type String \
-          --overwrite \
-          --value "{\"sha\":\"$IMAGE_TAG\",\"branch\":\"${BRANCH:-main}\",\"built_at\":\"$BUILT_AT\"}"
+          --item "{
+            \"service\":        {\"S\": \"$SERVICE_NAME\"},
+            \"built_at\":       {\"S\": \"$BUILT_AT\"},
+            \"service_branch\": {\"S\": \"$SERVICE_BRANCH\"},
+            \"tag\":            {\"S\": \"$TAG\"},
+            \"sha\":            {\"S\": \"$CODEBUILD_RESOLVED_SOURCE_VERSION\"},
+            \"branch\":         {\"S\": \"$BRANCH_VALUE\"}
+          }"
