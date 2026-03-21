@@ -29,8 +29,6 @@ jobs:
     outputs:
       image_tag: ${{ steps.tag.outputs.RELEASE_TAG }}
       branch: ${{ steps.tag.outputs.BRANCH }}
-      release_tag: ${{ steps.tag.outputs.RELEASE_TAG }}
-      source_sha: ${{ steps.tag.outputs.SOURCE_SHA }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -106,21 +104,3 @@ jobs:
             fi
             sleep 30
           done
-
-  push-git-tag:
-    needs: build
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Push semantic version tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ needs.build.outputs.release_tag }}
-          git push origin ${{ needs.build.outputs.release_tag }}
