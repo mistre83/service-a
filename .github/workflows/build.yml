@@ -3,11 +3,22 @@ name: Build
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch feature da buildare (es. feat/TASK-123)'
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -15,10 +26,51 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-south-1
 
+      - name: Calculate tag
+        id: tag
+        run: |
+          SOURCE_SHA=$(git rev-parse HEAD)
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+            RELEASE_TAG="$BRANCH"
+          else
+            BRANCH="main"
+            COMMIT_MSG=$(git log -1 --format="%s")
+
+            LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+            [ -z "$LATEST_TAG" ] && LATEST_TAG="v0.0.0"
+
+            MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | tr -d 'v')
+            MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+            PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+
+            if echo "$COMMIT_MSG" | grep -qE '^feat!:|BREAKING CHANGE'; then
+              MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+            elif echo "$COMMIT_MSG" | grep -qE '^feat:'; then
+              MINOR=$((MINOR + 1)); PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+
+            RELEASE_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag $RELEASE_TAG
+            git push origin $RELEASE_TAG
+          fi
+
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          echo "SOURCE_SHA=$SOURCE_SHA" >> $GITHUB_OUTPUT
+
       - name: Trigger CodeBuild
         run: |
           aws codebuild start-build \
             --project-name poc-test-service-a-build \
-            --source-version ${{ github.sha }} \
-            --environment-variables-override name=BRANCH,value=${{ github.ref_name }},type=PLAINTEXT \
+            --source-version "${{ steps.tag.outputs.SOURCE_SHA }}" \
+            --environment-variables-override \
+              name=BRANCH,value="${{ steps.tag.outputs.BRANCH }}",type=PLAINTEXT \
+              name=RELEASE_TAG,value="${{ steps.tag.outputs.RELEASE_TAG }}",type=PLAINTEXT \
             --region eu-south-1
