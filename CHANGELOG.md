@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/mistre83/service-a/compare/v0.2.2...v0.2.3) (2026-03-22)
+
+
+### Bug Fixes
+
+* test release please ([#21](https://github.com/mistre83/service-a/issues/21)) ([887979d](https://github.com/mistre83/service-a/commit/887979de6f49b2a4a1a946c6fef0710665e458d8))
+
 ## [0.2.2](https://github.com/mistre83/service-a/compare/v0.2.1...v0.2.2) (2026-03-22)
 
 
