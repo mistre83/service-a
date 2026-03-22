@@ -1,4 +1,4 @@
-name: Deploy
+name: "[User] Promote to Environment"
 run-name: "Deploy to ${{ inputs.environment }}"
 
 on:

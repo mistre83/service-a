@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: "[User] Deploy to Test"
 run-name: "Build ${{ inputs.branch }} → Deploy to ${{ inputs.environment }}"
 
 on:
