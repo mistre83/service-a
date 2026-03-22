@@ -3,17 +3,28 @@ name: Release Please
 on:
   push:
     branches: [main]
-
-permissions:
-  contents: write
-  pull-requests: write
+    paths:
+      - 'CHANGELOG.md'
+      - 'version.txt'
 
 jobs:
+  generate-token:
+    runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.app-token.outputs.token }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
   release-please:
+    needs: generate-token
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v3
         with:
           release-type: simple
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ needs.generate-token.outputs.token }}
           default-branch: main
