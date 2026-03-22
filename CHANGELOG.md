@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/mistre83/service-a/compare/v0.2.5...v0.3.0) (2026-03-22)
+
+
+### Features
+
+* added test endpoint ([#30](https://github.com/mistre83/service-a/issues/30)) ([0277855](https://github.com/mistre83/service-a/commit/02778556703ea0ccc83d5b45a183cb7edc0cb1f3))
+
 ## [0.2.5](https://github.com/mistre83/service-a/compare/v0.2.4...v0.2.5) (2026-03-22)
 
 
