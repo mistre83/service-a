@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/mistre83/service-a/compare/v0.6.0...v0.7.0) (2026-03-22)
+
+
+### Features
+
+* test workflow ([#40](https://github.com/mistre83/service-a/issues/40)) ([0a5141b](https://github.com/mistre83/service-a/commit/0a5141b916cc6f715615b82861866d499144ace7))
+
 ## [0.6.0](https://github.com/mistre83/service-a/compare/v0.5.0...v0.6.0) (2026-03-22)
 
 
