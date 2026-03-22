@@ -3,6 +3,9 @@ name: PR Checks
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - 'version.txt'
 
 jobs:
   pr-checks:
