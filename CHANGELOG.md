@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.5](https://github.com/mistre83/service-a/compare/v0.2.4...v0.2.5) (2026-03-22)
+
+
+### Bug Fixes
+
+* pong pong ([#28](https://github.com/mistre83/service-a/issues/28)) ([31f73b1](https://github.com/mistre83/service-a/commit/31f73b16e321ee606e4767f460a59744296714ff))
+* updated api-ping ([#26](https://github.com/mistre83/service-a/issues/26)) ([177a37f](https://github.com/mistre83/service-a/commit/177a37f3a95edeb266ed489e6aa13b2c3693cfa4))
+
 ## [0.2.4](https://github.com/mistre83/service-a/compare/v0.2.3...v0.2.4) (2026-03-22)
 
 
