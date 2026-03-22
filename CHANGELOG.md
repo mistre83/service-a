@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/mistre83/service-a/compare/v0.5.0...v0.6.0) (2026-03-22)
+
+
+### Features
+
+* test size label ([#38](https://github.com/mistre83/service-a/issues/38)) ([267c951](https://github.com/mistre83/service-a/commit/267c951ac29ee6d5fe0f289d6fe32a8e7a9b65f0))
+
 ## [0.5.0](https://github.com/mistre83/service-a/compare/v0.4.0...v0.5.0) (2026-03-22)
 
 
