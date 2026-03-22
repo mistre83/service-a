@@ -1,0 +1,10 @@
+name: Deploy to prod
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  deploy-prod:
+    uses: mistre83/shared-workflows/.github/workflows/deploy-prod.yml@main
+    secrets: inherit
