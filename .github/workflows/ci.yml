@@ -19,7 +19,7 @@ jobs:
       - id: check
         run: |
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
-          if [ -z "$CHANGED" ] || echo "$CHANGED" | grep -qvE '^(CHANGELOG\.md|version\.txt)$'; then
+          if [ -z "$CHANGED" ] || echo "$CHANGED" | grep -qvE '^(CHANGELOG\.md|version\.txt|\.release-please-manifest\.json)$'; then
             echo "is_code_push=true" >> $GITHUB_OUTPUT
           else
             echo "is_code_push=false" >> $GITHUB_OUTPUT
