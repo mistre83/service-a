@@ -10,3 +10,7 @@ Route::get('/user', function (Request $request) {
 Route::get('ping', function () {
     return response()->json(['message' => 'pong service-a release-please-test-fix (test) -5']);
 });
+
+Route::get('pong', function () {
+    return response()->json(['message' => 'pong pong!']);
+});
