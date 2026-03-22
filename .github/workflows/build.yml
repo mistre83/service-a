@@ -14,6 +14,9 @@ jobs:
 
   release-please:
     needs: build
+    # Run even if build was skipped (Release Please commit merges the release PR and needs to create the tag).
+    # Do NOT run if build actually failed.
+    if: always() && !failure()
     runs-on: ubuntu-latest
     permissions:
       contents: write
