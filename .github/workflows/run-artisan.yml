@@ -1,0 +1,25 @@
+name: "[User] Run Artisan Command"
+run-name: "php artisan ${{ inputs.command }} on ${{ inputs.environment }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - prod
+      command:
+        description: 'Artisan command (e.g. migrate, cache:clear, db:seed)'
+        required: true
+
+jobs:
+  run:
+    uses: mistre83/shared-workflows/.github/workflows/run-artisan.yml@main
+    with:
+      environment: ${{ inputs.environment }}
+      command: ${{ inputs.command }}
+    secrets: inherit
