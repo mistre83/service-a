@@ -14,4 +14,4 @@ Route::get('ping', function () {
 Route::get('pong', function () {
     return response()->json(['message' => 'pong pong!']);
 });
-# PR checks test
+// PR checks test
