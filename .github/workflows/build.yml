@@ -1,16 +1,13 @@
 name: Build
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - 'version.txt'
 
 jobs:
   build:
-    # Skip Release Please PRs — they contain no code changes.
-    # deploy-prod.yml will deploy the ECR main tag (set by the last real build).
-    if: >-
-      github.event.pull_request.merged == true &&
-      !contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
     uses: mistre83/shared-workflows/.github/workflows/build.yml@main
     secrets: inherit
