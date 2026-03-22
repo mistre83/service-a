@@ -4,10 +4,6 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   build:
     # Skip Release Please commits — they contain no code changes.
@@ -15,18 +11,3 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'chore: release')"
     uses: mistre83/shared-workflows/.github/workflows/build.yml@main
     secrets: inherit
-
-  release-please:
-    needs: build
-    # Run even if build was skipped (Release Please commit merges the release PR and needs to create the tag).
-    # Do NOT run if build actually failed.
-    if: always() && !failure()
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: googleapis/release-please-action@v4
-        with:
-          release-type: simple
-          token: ${{ secrets.GITHUB_TOKEN }}
