@@ -9,9 +9,12 @@ on:
         required: true
         default: 'main'
       environment:
-        description: 'Target environment (prod is blocked)'
+        description: 'Target environment'
         required: true
         default: 'test'
+        type: choice
+        options:
+          - test
 
 permissions:
   contents: write
