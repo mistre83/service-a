@@ -8,7 +8,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('ping', function () {
-    return response()->json(['message' => 'pong release-please v4']);
+    return response()->json(['message' => 'PR on test']);
 });
 
 Route::get('pong', function () {
