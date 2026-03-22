@@ -8,6 +8,6 @@ jobs:
   build:
     # Skip Release Please commits — they contain no code changes.
     # deploy-prod.yml will deploy the ECR main tag (set by the last real build).
-    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+    if: "!startsWith(github.event.head_commit.message, 'chore: release') && !startsWith(github.event.head_commit.message, 'chore(main): release')"
     uses: mistre83/shared-workflows/.github/workflows/build.yml@main
     secrets: inherit
