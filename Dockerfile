@@ -11,9 +11,5 @@ RUN composer dump-autoload --optimize \
     && touch database/database.sqlite \
     && chown -R www-data:www-data storage bootstrap/cache database
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 EXPOSE 80
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
+CMD ["/bin/sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80"]
