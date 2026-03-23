@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/mistre83/service-a/compare/v0.8.1...v0.8.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* fixed build step ([#49](https://github.com/mistre83/service-a/issues/49)) ([e25aff7](https://github.com/mistre83/service-a/commit/e25aff78f75404e21db315c8c8003b6b54d35148))
+
 ## [0.8.1](https://github.com/mistre83/service-a/compare/v0.8.0...v0.8.1) (2026-03-23)
 
 
