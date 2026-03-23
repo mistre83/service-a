@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.3](https://github.com/mistre83/service-a/compare/v0.8.2...v0.8.3) (2026-03-23)
+
+
+### Bug Fixes
+
+* fixed action permissions ([#52](https://github.com/mistre83/service-a/issues/52)) ([e58f8cf](https://github.com/mistre83/service-a/commit/e58f8cf9bace3ff660bfa7639be4a20cc809826e))
+* fixed action permissions ([#54](https://github.com/mistre83/service-a/issues/54)) ([f7facbd](https://github.com/mistre83/service-a/commit/f7facbd8efc4c00408b08955934b60c7b10b31a6))
+* test AWS_ROLE_ARN ([#51](https://github.com/mistre83/service-a/issues/51)) ([4d0fb61](https://github.com/mistre83/service-a/commit/4d0fb619266a7d17d7a8f18921bc1839d17e4c0e))
+
 ## [0.8.2](https://github.com/mistre83/service-a/compare/v0.8.1...v0.8.2) (2026-03-23)
 
 
