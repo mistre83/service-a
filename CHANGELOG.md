@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/mistre83/service-a/compare/v0.8.0...v0.8.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* run migrations only on server startup, not on artisan tasks ([#47](https://github.com/mistre83/service-a/issues/47)) ([6d72b77](https://github.com/mistre83/service-a/commit/6d72b7755a6ff9a13d258d6b41755e3e7bc6ca03))
+
 ## [0.8.0](https://github.com/mistre83/service-a/compare/v0.7.0...v0.8.0) (2026-03-22)
 
 
