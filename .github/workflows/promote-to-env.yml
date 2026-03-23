@@ -1,5 +1,5 @@
-name: "[User] Promote to Environment"
-run-name: "Deploy to ${{ inputs.environment }}"
+name: "[User] Promote Build to Environment"
+run-name: "Promote main → ${{ inputs.environment }}"
 
 on:
   workflow_dispatch:
