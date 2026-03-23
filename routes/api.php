@@ -8,7 +8,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('ping', function () {
-    return response()->json(['message' => 'PR test workflow (1)']);
+    return response()->json(['message' => 'PR test AWS_ROLE_ARN']);
 });
 
 Route::get('pong', function () {
