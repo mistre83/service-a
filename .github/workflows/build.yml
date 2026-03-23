@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - 'CHANGELOG.md'
       - 'version.txt'
+      - '.release-please-manifest.json'
 
 jobs:
   build:
