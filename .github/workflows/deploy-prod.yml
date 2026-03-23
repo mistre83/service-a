@@ -7,7 +7,4 @@ on:
 jobs:
   deploy-prod:
     uses: mistre83/shared-workflows/.github/workflows/deploy-prod.yml@main
-    permissions:
-      id-token: write
-      contents: read
     secrets: inherit
