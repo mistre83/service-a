@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/mistre83/service-a/compare/v0.8.4...v0.9.0) (2026-03-25)
+
+
+### Features
+
+* test demo ([#57](https://github.com/mistre83/service-a/issues/57)) ([b1624f0](https://github.com/mistre83/service-a/commit/b1624f058ca68bf4aff4f6ebd04f672b0119a171))
+
 ## [0.8.4](https://github.com/mistre83/service-a/compare/v0.8.3...v0.8.4) (2026-03-23)
 
 
