@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.4](https://github.com/mistre83/service-a/compare/v0.8.3...v0.8.4) (2026-03-23)
+
+
+### Bug Fixes
+
+* flows rename ([#55](https://github.com/mistre83/service-a/issues/55)) ([d0d3697](https://github.com/mistre83/service-a/commit/d0d3697d753f467f8642178e77a2e6466761ecba))
+
 ## [0.8.3](https://github.com/mistre83/service-a/compare/v0.8.2...v0.8.3) (2026-03-23)
 
 
